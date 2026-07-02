@@ -1,16 +1,11 @@
-# core {{{
 [core]
-    editor = vim  
+    editor = vi
     pager = less -x4
 
-#}}}
-# user {{{
 [user]
 	email = emanuele@codiceplastico.com
-	name = ema
+	name = Emanuele DelBono
 
-#}}}
-# color {{{
 [color]
     branch = auto
     diff = auto
@@ -32,20 +27,16 @@
     changed = green
     untracked = cyan
 
-# }}}
-# push/pull/diff/options {{{
 [push]
     default = tracking
 [pull]
     default = current
+	rebase = false
 [branch]
   #autosetuprebase = always
 [apply]
   whitespace = nowarn
 
-#}}}
-
-# alias {{{
 [alias]
     st = status -s
     lds = log --pretty=format:"%C(yellow)%h\\ %ad%Cred%d\\ %Creset%s%Cblue\\ [%cn]" --decorate --date=short --graph
@@ -53,26 +44,83 @@
     co = checkout
     lb = !git reflog show --pretty=format:'%gs ~ %gd' --date=relative | grep 'checkout:' | grep -oE '[^ ]+ ~ .*' | awk -F~ '!seen[$1]++' | head -n 10 | awk -F' ~ HEAD@{' '{printf(\"  \\033[33m%s: \\033[37m %s\\033[0m\\n\", substr($2, 1, length($2)-1), $1)}'
 
-# }}}
 [credential]
 	helper = osxkeychain
+	helper = 
+	helper = /usr/local/share/gcm-core/git-credential-manager
+
 [help]
 	autocorrect = 1
+
 [difftool "Kaleidoscope"]
 	cmd = ksdiff --partial-changeset --relative-path \"$MERGED\" -- \"$LOCAL\" \"$REMOTE\"
+
 [diff]
 	tool = Kaleidoscope
+
 [difftool]
 	prompt = false
+
 [mergetool "Kaleidoscope"]
 	cmd = ksdiff --merge --output \"$MERGED\" --base \"$BASE\" -- \"$LOCAL\" --snapshot \"$REMOTE\" --snapshot
 	trustExitCode = true
+
 [mergetool]
 	prompt = false
+
 [merge]
-	tool = Kaleidoscope
+	tool =
+
 [filter "lfs"]
 	clean = git-lfs clean -- %f
 	smudge = git-lfs smudge -- %f
 	process = git-lfs filter-process
 	required = true
+
+[init]
+	defaultBranch = main
+
+[credential "https://dev.azure.com"]
+	useHttpPath = true
+
+# clearly makes git better
+
+[column]
+        ui = auto
+[branch]
+        sort = -committerdate
+[tag]
+        sort = version:refname
+[init]
+        defaultBranch = main
+[diff]
+        algorithm = histogram
+        colorMoved = plain
+        mnemonicPrefix = true
+        renames = true
+[push]
+        default = simple
+        autoSetupRemote = true
+        followTags = true
+[fetch]
+        prune = true
+        pruneTags = true
+        all = true
+
+# why the hell not?
+
+[help]
+        autocorrect = prompt
+[commit]
+        verbose = true
+[rerere]
+        enabled = true
+        autoupdate = true
+[core]
+        excludesfile = ~/.gitignore
+[rebase]
+        autoSquash = true
+        autoStash = true
+        updateRefs = true
+[credential "https://huggingface.co"]
+	provider = generic
