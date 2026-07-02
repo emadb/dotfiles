@@ -1,144 +1,159 @@
+#!/usr/bin/env zsh
 
-# Path to your oh-my-zsh installation.
-export ZSH="/Users/ema/.oh-my-zsh"
+# One-time install of the plugins (all cloned into ~/.zsh/plugins):
+#   mkdir -p ~/.zsh/plugins
+#   git clone https://github.com/zsh-users/zsh-completions         ~/.zsh/plugins/zsh-completions
+#   git clone https://github.com/zsh-users/zsh-syntax-highlighting ~/.zsh/plugins/zsh-syntax-highlighting
+# To update later: cd into each dir and `git pull` (or loop over them).
 
-# Uncomment the following line to use case-sensitive completion.
-# CASE_SENSITIVE="true"
+# ----------------------------------------------------------------------------
+# Plugin directory (cloned repos)
+# ----------------------------------------------------------------------------
+ZSH_PLUGIN_DIR="$HOME/.zsh/plugins"
 
-# Uncomment the following line to use hyphen-insensitive completion.
-# Case-sensitive completion must be off. _ and - will be interchangeable.
-# HYPHEN_INSENSITIVE="true"
-
-# Uncomment the following line to disable bi-weekly auto-update checks.
-# DISABLE_AUTO_UPDATE="true"
-
-# Uncomment the following line to automatically update without prompting.
-# DISABLE_UPDATE_PROMPT="true"
-
-# Uncomment the following line to change how often to auto-update (in days).
-# export UPDATE_ZSH_DAYS=13
-
-# Uncomment the following line if pasting URLs and other text is messed up.
-# DISABLE_MAGIC_FUNCTIONS=true
-
-# Uncomment the following line to disable colors in ls.
-# DISABLE_LS_COLORS="true"
-
-# Uncomment the following line to disable auto-setting terminal title.
-# DISABLE_AUTO_TITLE="true"
-
-# Uncomment the following line to enable command auto-correction.
-# ENABLE_CORRECTION="true"
-
-# Uncomment the following line to display red dots whilst waiting for completion.
-# COMPLETION_WAITING_DOTS="true"
-
-# Uncomment the following line if you want to disable marking untracked files
-# under VCS as dirty. This makes repository status check for large repositories
-# much, much faster.
-# DISABLE_UNTRACKED_FILES_DIRTY="true"
-
-# Uncomment the following line if you want to change the command execution time
-# stamp shown in the history command output.
-# You can set one of the optional three formats:
-# "mm/dd/yyyy"|"dd.mm.yyyy"|"yyyy-mm-dd"
-# or set a custom format using the strftime function format specifications,
-# see 'man strftime' for details.
-# HIST_STAMPS="mm/dd/yyyy"
-
-# Would you like to use another custom folder than $ZSH/custom?
-# ZSH_CUSTOM=/path/to/new-custom-folder
-
-# Which plugins would you like to load?
-# Standard plugins can be found in ~/.oh-my-zsh/plugins/*
-# Custom plugins may be added to ~/.oh-my-zsh/custom/plugins/
-# Example format: plugins=(rails git textmate ruby lighthouse)
-# Add wisely, as too many plugins slow down shell startup.
-
-fpath+=${ZSH_CUSTOM:-${ZSH:-~/.oh-my-zsh}/custom}/plugins/zsh-completions/src
-
-plugins=(git dotenv macos zsh-navigation-tools zsh-completions npm mix asdf zsh-syntax-highlighting)
-# plugins=(git dotenv osx zsh-navigation-tools zsh-syntax-highlighting zsh-autosuggestions npm npx mix)
-
-source $ZSH/oh-my-zsh.sh
-
-# User configuration
-
-# export MANPATH="/usr/local/man:$MANPATH"
-
-# You may need to manually set your language environment
+# ----------------------------------------------------------------------------
+# Environment
+# ----------------------------------------------------------------------------
 export LANG=en_US.UTF-8
+export EDITOR='zed'
 
-# Preferred editor for local and remote sessions
-# if [[ -n $SSH_CONNECTION ]]; then
-#   export EDITOR='vim'
-# else
-#   export EDITOR='mvim'
-# fi
+export ERL_AFLAGS="-kernel shell_history enabled"
+export HOMEBREW_NO_AUTO_UPDATE=1
 
-# Compilation flags
-# export ARCHFLAGS="-arch x86_64"
+# PATH
+export PATH="/usr/local/sbin:$PATH"
+export PATH="/usr/local/opt/libpq/bin:$PATH"
+export PATH="${ASDF_DATA_DIR:-$HOME/.asdf}/shims:$PATH"
 
-# Set personal aliases, overriding those provided by oh-my-zsh libs,
-# plugins, and themes. Aliases can be placed here, though oh-my-zsh
-# users are encouraged to define aliases within the ZSH_CUSTOM folder.
-# For a full list of active aliases, run `alias`.
-#
+# Colored output for ls and friends (OMZ used to enable this)
+export CLICOLOR=1
+export LSCOLORS=ExFxBxDxCxegedabagacad
 
-setopt share_history
-setopt append_history
+# ----------------------------------------------------------------------------
+# Completion system
+# ----------------------------------------------------------------------------
+# Add extra completion directories to fpath BEFORE compinit runs.
+fpath=("$ZSH_PLUGIN_DIR/zsh-completions/src" $fpath)
+fpath=(/Users/ema/.docker/completions $fpath)
+fpath=(${ASDF_DATA_DIR:-$HOME/.asdf}/completions $fpath)
 
-SAVEHIST=10000
-HISTSIZE=10000
+autoload -Uz compinit
+# Rebuild the completion cache at most once a day for faster startup.
+# The glob expands to args only when ~/.zcompdump is older than 24h, in which
+# case we run a full (security-checked) compinit; otherwise the fast path.
+() {
+  if (( $# > 0 )); then compinit; else compinit -C; fi
+} ${HOME}/.zcompdump(N.mh+24)
+
+# OMZ-like completion behaviour
+zstyle ':completion:*' menu select
+zstyle ':completion:*' matcher-list 'm:{a-zA-Z}={A-Za-z}' 'r:|=*' 'l:|=* r:|=*'
+zstyle ':completion:*' list-colors "${(s.:.)LS_COLORS}"
+zstyle ':completion:*' group-name ''
+zstyle ':completion:*:descriptions' format '%F{yellow}-- %d --%f'
+
+# ----------------------------------------------------------------------------
+# History (mirrors the OMZ defaults you were relying on)
+# ----------------------------------------------------------------------------
 HISTFILE=~/.zsh_historys
+HISTSIZE=10000
+SAVEHIST=10000
 
+setopt share_history          # share history across sessions
+setopt append_history         # append rather than overwrite
+setopt inc_append_history     # write as commands are entered
+setopt extended_history       # record timestamps
+setopt hist_expire_dups_first
+setopt hist_ignore_dups       # don't record consecutive duplicates
+setopt hist_ignore_space      # ignore commands starting with a space
+setopt hist_verify            # show before running history expansion
+
+# ----------------------------------------------------------------------------
+# Shell options
+# ----------------------------------------------------------------------------
+setopt auto_cd                # `dir` instead of `cd dir`
+setopt auto_pushd             # cd pushes onto the dir stack
+setopt pushd_ignore_dups
+setopt interactive_comments   # allow # comments in interactive shell
+setopt no_beep
+
+# ----------------------------------------------------------------------------
+# Key bindings (emacs mode + prefix history search)
+# ----------------------------------------------------------------------------
+bindkey -e
+
+autoload -Uz up-line-or-beginning-search down-line-or-beginning-search
+zle -N up-line-or-beginning-search
+zle -N down-line-or-beginning-search
+bindkey '^[[A' up-line-or-beginning-search     # Up
+bindkey '^[[B' down-line-or-beginning-search   # Down
+
+# ----------------------------------------------------------------------------
+# dotenv: auto-source a .env file when entering a directory
+# (lightweight replacement for the OMZ `dotenv` plugin, with a prompt)
+# ----------------------------------------------------------------------------
+ZSH_DOTENV_FILE=.env
+_dotenv_autoload() {
+  [[ -f "$ZSH_DOTENV_FILE" ]] || return
+  # Confirm before sourcing, for safety.
+  printf 'dotenv: source %s/%s? [Y/n] ' "$PWD" "$ZSH_DOTENV_FILE"
+  read -k 1 -r reply; printf '\n'
+  [[ "$reply" == [nN] ]] && return
+  set -a; source "$ZSH_DOTENV_FILE"; set +a
+}
+autoload -Uz add-zsh-hook
+add-zsh-hook chpwd _dotenv_autoload
+_dotenv_autoload   # also run for the initial directory
+
+# ----------------------------------------------------------------------------
+# Plugins (third-party)
+# ----------------------------------------------------------------------------
+
+# npm completion (replaces the OMZ `npm` plugin)
+command -v npm >/dev/null && source <(npm completion 2>/dev/null)
+
+# ----------------------------------------------------------------------------
+# Aliases (your personal ones)
+# ----------------------------------------------------------------------------
 alias rm_ds="find . -name '*.DS_Store' -type f -delete"
 alias gti='git'
 alias www='python3 -m http.server --cgi 8000 --bind 127.0.0.1'
 alias yt='yt-dlp -x --audio-format wav --audio-quality 0'
 alias ttop='top -ocpu -R -F -s 2 -n30'
 alias zed='open -a /Applications/Zed.app -n'
+alias l='ls -la'
+alias bearcli='/Applications/Bear.app/Contents/MacOS/bearcli'
+# ----------------------------------------------------------------------------
+# Functions
+# ----------------------------------------------------------------------------
+# yazi: cd into the directory you quit yazi in
+function y() {
+  local tmp="$(mktemp -t "yazi-cwd.XXXXXX")" cwd
+  command yazi "$@" --cwd-file="$tmp"
+  IFS= read -r -d '' cwd < "$tmp"
+  [ "$cwd" != "$PWD" ] && [ -d "$cwd" ] && builtin cd -- "$cwd"
+  rm -f -- "$tmp"
+}
 
-
-export ERL_AFLAGS="-kernel shell_history enabled"
-export PATH="/usr/local/sbin:$PATH"
-export PATH="/usr/local/opt/libpq/bin:$PATH"
-export HOMEBREW_NO_AUTO_UPDATE=1
-
+# ----------------------------------------------------------------------------
+# Tool initialisation
+# ----------------------------------------------------------------------------
+# Starship prompt
 eval "$(starship init zsh)"
-export EDITOR='zed'
-export PATH="${ASDF_DATA_DIR:-$HOME/.asdf}/shims:$PATH"
 
-# The following lines have been added by Docker Desktop to enable Docker CLI completions.
-fpath=(/Users/ema/.docker/completions $fpath)
-fpath=(${ASDF_DATA_DIR:-$HOME/.asdf}/completions $fpath)
-autoload -Uz compinit && compinit
+# fzf key bindings and fuzzy completion
+command -v fzf >/dev/null && source <(fzf --zsh)
 
-# Set up fzf key bindings and fuzzy completion
-source <(fzf --zsh)
-
-export NVM_DIR="$HOME/.nvm"
-[ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"  # This loads nvm
-[ -s "$NVM_DIR/bash_completion" ] && \. "$NVM_DIR/bash_completion"  # This loads nvm bash_completion
-
-
-# VS Code Shell Integration for Copilot
-# Fix for terminal completion detection issue
+# VS Code shell integration for Copilot
 if [[ "$TERM_PROGRAM" == "vscode" ]]; then
-    # Disable RPROMPT in VS Code (causes detection issues)
-    unset RPROMPT
-    unset RPS1
-
-    # Load VS Code shell integration
-    [[ -f "$(code --locate-shell-integration-path zsh)" ]] && \
-        . "$(code --locate-shell-integration-path zsh)"
+  unset RPROMPT
+  unset RPS1
+  [[ -f "$(code --locate-shell-integration-path zsh)" ]] && \
+    . "$(code --locate-shell-integration-path zsh)"
 fi
 
-# yazi
-function y() {
-	local tmp="$(mktemp -t "yazi-cwd.XXXXXX")" cwd
-	command yazi "$@" --cwd-file="$tmp"
-	IFS= read -r -d '' cwd < "$tmp"
-	[ "$cwd" != "$PWD" ] && [ -d "$cwd" ] && builtin cd -- "$cwd"
-	rm -f -- "$tmp"
-}
+# ----------------------------------------------------------------------------
+# zsh-syntax-highlighting — MUST be sourced last
+# ----------------------------------------------------------------------------
+[[ -f "$ZSH_PLUGIN_DIR/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh" ]] && \
+  source "$ZSH_PLUGIN_DIR/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh"
