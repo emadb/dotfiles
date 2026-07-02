@@ -1,31 +1,6 @@
-# If you come from bash you might have to change your $PATH.
-# export PATH=$HOME/bin:/usr/local/bin:$PATH
 
 # Path to your oh-my-zsh installation.
 export ZSH="/Users/ema/.oh-my-zsh"
-
-# Set name of the theme to load --- if set to "random", it will
-# load a random theme each time oh-my-zsh is loaded, in which case,
-# to know which specific one was loaded, run: echo $RANDOM_THEME
-# See https://github.com/ohmyzsh/ohmyzsh/wiki/Themes
-# POWERLEVEL9K_MODE='awesome-fontconfig'
-ZSH_THEME="powerlevel9k/powerlevel9k"
-POWERLEVEL9K_DISABLE_RPROMPT=true
-POWERLEVEL9K_PROMPT_ADD_NEWLINE=true
-
-POWERLEVEL9K_VCS_CLEAN_BACKGROUND="007"
-POWERLEVEL9K_VCS_UNTRACKED_BACKGROUND="007"
-POWERLEVEL9K_VCS_MODIFIED_BACKGROUND="007"
-
-POWERLEVEL9K_DIR_HOME_SUBFOLDER_FOREGROUND="015"
-POWERLEVEL9K_DIR_HOME_FOREGROUND="015"
-POWERLEVEL9K_LEFT_PROMPT_ELEMENTS=(dir vcs)
-
-# Set list of themes to pick from when loading at random
-# Setting this variable when ZSH_THEME=random will cause zsh to load
-# a theme from this variable instead of looking in ~/.oh-my-zsh/themes/
-# If set to an empty array, this variable will have no effect.
-# ZSH_THEME_RANDOM_CANDIDATES=( "robbyrussell" "agnoster" )
 
 # Uncomment the following line to use case-sensitive completion.
 # CASE_SENSITIVE="true"
@@ -79,7 +54,11 @@ POWERLEVEL9K_LEFT_PROMPT_ELEMENTS=(dir vcs)
 # Custom plugins may be added to ~/.oh-my-zsh/custom/plugins/
 # Example format: plugins=(rails git textmate ruby lighthouse)
 # Add wisely, as too many plugins slow down shell startup.
-plugins=(git dotenv osx zsh-navigation-tools zsh-syntax-highlighting zsh-completions npm npx mix)
+
+fpath+=${ZSH_CUSTOM:-${ZSH:-~/.oh-my-zsh}/custom}/plugins/zsh-completions/src
+
+plugins=(git dotenv macos zsh-navigation-tools zsh-completions npm mix asdf zsh-syntax-highlighting)
+# plugins=(git dotenv osx zsh-navigation-tools zsh-syntax-highlighting zsh-autosuggestions npm npx mix)
 
 source $ZSH/oh-my-zsh.sh
 
@@ -88,7 +67,7 @@ source $ZSH/oh-my-zsh.sh
 # export MANPATH="/usr/local/man:$MANPATH"
 
 # You may need to manually set your language environment
-# export LANG=en_US.UTF-8
+export LANG=en_US.UTF-8
 
 # Preferred editor for local and remote sessions
 # if [[ -n $SSH_CONNECTION ]]; then
@@ -106,18 +85,60 @@ source $ZSH/oh-my-zsh.sh
 # For a full list of active aliases, run `alias`.
 #
 
+setopt share_history
+setopt append_history
+
+SAVEHIST=10000
+HISTSIZE=10000
+HISTFILE=~/.zsh_historys
+
 alias rm_ds="find . -name '*.DS_Store' -type f -delete"
 alias gti='git'
-alias www='python -m SimpleHTTPServer'
-alias tti='trans :it $1'
-alias tte='trans :en $1'
-alias http='curlie'
+alias www='python3 -m http.server --cgi 8000 --bind 127.0.0.1'
+alias yt='yt-dlp -x --audio-format wav --audio-quality 0'
+alias ttop='top -ocpu -R -F -s 2 -n30'
+alias zed='open -a /Applications/Zed.app -n'
 
-#elixir
+
 export ERL_AFLAGS="-kernel shell_history enabled"
-
-. /usr/local/opt/asdf/asdf.sh
-. /usr/local/opt/asdf/etc/bash_completion.d/asdf.bash
 export PATH="/usr/local/sbin:$PATH"
-export PATH="/usr/local/opt/ruby/bin:$PATH"
-export PATH="/usr/local/opt/ruby/bin:$PATH"
+export PATH="/usr/local/opt/libpq/bin:$PATH"
+export HOMEBREW_NO_AUTO_UPDATE=1
+
+eval "$(starship init zsh)"
+export EDITOR='zed'
+export PATH="${ASDF_DATA_DIR:-$HOME/.asdf}/shims:$PATH"
+
+# The following lines have been added by Docker Desktop to enable Docker CLI completions.
+fpath=(/Users/ema/.docker/completions $fpath)
+fpath=(${ASDF_DATA_DIR:-$HOME/.asdf}/completions $fpath)
+autoload -Uz compinit && compinit
+
+# Set up fzf key bindings and fuzzy completion
+source <(fzf --zsh)
+
+export NVM_DIR="$HOME/.nvm"
+[ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"  # This loads nvm
+[ -s "$NVM_DIR/bash_completion" ] && \. "$NVM_DIR/bash_completion"  # This loads nvm bash_completion
+
+
+# VS Code Shell Integration for Copilot
+# Fix for terminal completion detection issue
+if [[ "$TERM_PROGRAM" == "vscode" ]]; then
+    # Disable RPROMPT in VS Code (causes detection issues)
+    unset RPROMPT
+    unset RPS1
+
+    # Load VS Code shell integration
+    [[ -f "$(code --locate-shell-integration-path zsh)" ]] && \
+        . "$(code --locate-shell-integration-path zsh)"
+fi
+
+# yazi
+function y() {
+	local tmp="$(mktemp -t "yazi-cwd.XXXXXX")" cwd
+	command yazi "$@" --cwd-file="$tmp"
+	IFS= read -r -d '' cwd < "$tmp"
+	[ "$cwd" != "$PWD" ] && [ -d "$cwd" ] && builtin cd -- "$cwd"
+	rm -f -- "$tmp"
+}
